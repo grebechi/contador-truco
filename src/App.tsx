@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+type Lado = 'nos' | 'eles'
+
 function App() {
   const [pontosNos, setPontosNos] = useState(0)
   const [pontosEles, setPontosEles] = useState(0)
   const [nomeNos, setNomeNos] = useState('Nós')
   const [nomeEles, setNomeEles] = useState('Eles')
-  const [limitePontos, setLimitePontos] = useState(24) // Truco gaúcho geralmente é 24
+  const [limitePontos, setLimitePontos] = useState(24)
   const [vitoriasNos, setVitoriasNos] = useState(0)
   const [vitoriasEles, setVitoriasEles] = useState(0)
   const [tempoDecorrido, setTempoDecorrido] = useState(0)
   const [timerAtivo, setTimerAtivo] = useState(true)
-  const [historico, setHistorico] = useState<{ vencedor: string, placar: string, duracao: string }[]>([])
   const [menuAberto, setMenuAberto] = useState(false)
+  const [historico, setHistorico] = useState<{ idVencedor: Lado, placar: string, duracao: string }[]>([])
+  const [modalVitoria, setModalVitoria] = useState<{ idVencedor: Lado, ptsVencedor: number, ptsPerdedor: number, tempo: string } | null>(null)
 
   useEffect(() => {
     let intervalo: ReturnType<typeof setInterval>;
@@ -22,39 +25,26 @@ function App() {
     return () => clearInterval(intervalo)
   }, [timerAtivo])
 
-  // --- TELA SEMPRE ATIVA (WAKE LOCK) ---
   useEffect(() => {
-    // A interface nativa do navegador para o cadeado de tela
     let wakeLock: any = null
-
     const solicitarTelaAtiva = async () => {
       try {
-        // Verifica se o navegador do celular suporta a tecnologia
         if ('wakeLock' in navigator) {
           wakeLock = await navigator.wakeLock.request('screen')
-          console.log('Wake Lock ativado: A tela não vai apagar!')
         }
       } catch (err) {
-        console.error('Erro ao manter a tela ativa:', err)
+        console.error('Erro ao manter tela ativa:', err)
       }
     }
 
     solicitarTelaAtiva()
 
-    // Se o usuário minimizar o app e voltar, o navegador derruba o cadeado.
-    // Esse evento detecta a volta e religa a tela ativa.
-    const lidarComMudancaDeVisibilidade = () => {
-      if (document.visibilityState === 'visible') {
-        solicitarTelaAtiva()
-      }
-    }
+    const lidarComMudanca = () => document.visibilityState === 'visible' && solicitarTelaAtiva()
+    document.addEventListener('visibilitychange', lidarComMudanca)
 
-    document.addEventListener('visibilitychange', lidarComMudancaDeVisibilidade)
-
-    // Função de limpeza do React quando fechamos o app
     return () => {
       if (wakeLock) wakeLock.release()
-      document.removeEventListener('visibilitychange', lidarComMudancaDeVisibilidade)
+      document.removeEventListener('visibilitychange', lidarComMudanca)
     }
   }, [])
 
@@ -64,46 +54,66 @@ function App() {
     return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`
   }
 
-  const finalizarPartida = (vencedor: string, ptsNos: number, ptsEles: number) => {
+  const finalizarPartida = (idVencedor: Lado, ptsNos: number, ptsEles: number) => {
     const tempo = formatarTempo(tempoDecorrido)
     const maior = Math.max(ptsNos, ptsEles)
     const menor = Math.min(ptsNos, ptsEles)
     
-    alert(`🎉 Fim de jogo! ${vencedor} venceu por ${maior} a ${menor} em ${tempo}!`)
+    setTimerAtivo(false)
     
-    vencedor === nomeNos ? setVitoriasNos(vitoriasNos + 1) : setVitoriasEles(vitoriasEles + 1)
-    setHistorico([...historico, { vencedor, placar: `${maior} a ${menor}`, duracao: tempo }])
+    idVencedor === 'nos' ? setVitoriasNos(vitoriasNos + 1) : setVitoriasEles(vitoriasEles + 1)
     
+    setHistorico([...historico, { idVencedor, placar: `${maior} a ${menor}`, duracao: tempo }])
+    
+    setModalVitoria({
+      idVencedor,
+      ptsVencedor: maior,
+      ptsPerdedor: menor,
+      tempo
+    })
+  }
+
+  const iniciarNovaPartida = () => {
+    setModalVitoria(null)
     setPontosNos(0)
     setPontosEles(0)
     setTempoDecorrido(0)
     setTimerAtivo(true)
   }
 
-  
-  const calcularFaltaEnvido = () => {
-    const maiorPontuacao = Math.max(pontosNos, pontosEles)
-    const metadeDoJogo = limitePontos / 2
-    
-    if (maiorPontuacao < metadeDoJogo) {
-      return limitePontos
-    } else {
-      return limitePontos - maiorPontuacao
+  const excluirPartida = (index: number) => {
+    if (window.confirm("Deseja excluir esta partida do histórico?")) {
+      const partida = historico[index]
+      
+      if (partida.idVencedor === 'nos') {
+        setVitoriasNos(prev => Math.max(0, prev - 1))
+      } else {
+        setVitoriasEles(prev => Math.max(0, prev - 1))
+      }
+
+      const novoHistorico = historico.filter((_, i) => i !== index)
+      setHistorico(novoHistorico)
     }
+  }
+
+  const calcularFaltaEnvido = () => {
+    const maior = Math.max(pontosNos, pontosEles)
+    return maior < (limitePontos / 2) ? limitePontos : limitePontos - maior
   }
 
   const adicionarNos = (pontos: number) => {
     const novos = pontosNos + pontos
-    novos >= limitePontos ? finalizarPartida(nomeNos, novos, pontosEles) : setPontosNos(novos)
+    novos >= limitePontos ? finalizarPartida('nos', novos, pontosEles) : setPontosNos(novos)
   }
 
   const adicionarEles = (pontos: number) => {
     const novos = pontosEles + pontos
-    novos >= limitePontos ? finalizarPartida(nomeEles, pontosNos, novos) : setPontosEles(novos)
+    novos >= limitePontos ? finalizarPartida('eles', pontosNos, novos) : setPontosEles(novos)
   }
 
   const removerNos = () => pontosNos > 0 && setPontosNos(pontosNos - 1)
   const removerEles = () => pontosEles > 0 && setPontosEles(pontosEles - 1)
+  const alguemNasBoas = Math.max(pontosNos, pontosEles) >= limitePontos / 2;
 
   return (
     <div className="container">
@@ -115,45 +125,111 @@ function App() {
         </div>
       </div>
 
-      <button className="btn-menu" onClick={() => setMenuAberto(true)}>☰</button>
+      {modalVitoria && (
+        <div className="modal-overlay">
+          <div className="modal-vitoria">
+            <h2>🏆 Fim de Jogo!</h2>
+            <h1 className="destaque-vencedor">
+              {modalVitoria.idVencedor === 'nos' ? nomeNos : nomeEles} Venceu!
+            </h1>
+            
+            <p className="placar-partida">Placar: {modalVitoria.ptsVencedor} x {modalVitoria.ptsPerdedor}</p>
+            <p className="tempo-partida">Duração: {modalVitoria.tempo}</p>
 
-      <aside className={`sidebar ${menuAberto ? 'aberto' : ''}`}>
-        <button className="btn-fechar" onClick={() => setMenuAberto(false)}>✖</button>
+            <div className="divisor"></div>
+
+            <h3>Placar Global</h3>
+            <div className="placar-global">
+              <div className={modalVitoria.idVencedor === 'nos' ? 'ganhador-global' : ''}>
+                <span>{nomeNos}</span>
+                <strong>{vitoriasNos}</strong>
+              </div>
+              <div className="vs">x</div>
+              <div className={modalVitoria.idVencedor === 'eles' ? 'ganhador-global' : ''}>
+                <span>{nomeEles}</span>
+                <strong>{vitoriasEles}</strong>
+              </div>
+            </div>
+
+            <button className="btn-nova-partida" onClick={iniciarNovaPartida}>
+              Nova Partida
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button className={`btn-menu ${menuAberto ? 'escondido' : ''}`} onClick={() => setMenuAberto(true)}>☰</button>
+
+      <div className={`overlay-sidebar ${menuAberto ? 'ativa' : ''}`} onClick={() => setMenuAberto(false)}></div>
+
+      <aside className={`sidebar ${menuAberto ? 'aberta' : ''}`}>
+        <button className="btn-fechar" style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', float: 'right' }} onClick={() => setMenuAberto(false)}>✖</button>
         <div className="sidebar-conteudo">
           <h3>Configurações</h3>
-          <div className="seletor-limite">
-            <span className="label-limite">Meta:</span>
+          <div className="seletor-limite" style={{ marginBottom: '20px' }}>
+            <span className="label-limite">Meta: </span>
             <button className={limitePontos === 12 ? 'ativo' : ''} onClick={() => setLimitePontos(12)}>12</button>
             <button className={limitePontos === 15 ? 'ativo' : ''} onClick={() => setLimitePontos(15)}>15</button>
             <button className={limitePontos === 24 ? 'ativo' : ''} onClick={() => setLimitePontos(24)}>24</button>
             <button className={limitePontos === 30 ? 'ativo' : ''} onClick={() => setLimitePontos(30)}>30</button>
           </div>
-          <div className="painel-timer">
-            <span className="relogio">⏱ {formatarTempo(tempoDecorrido)}</span>
-            <div className="controles-timer">
-              <button onClick={() => setTimerAtivo(!timerAtivo)}>{timerAtivo ? '⏸ Pausar' : '▶ Retomar'}</button>
-              <button onClick={() => setTempoDecorrido(0)}>🔄 Zerar</button>
+          
+          <div className="painel-timer" style={{ marginBottom: '20px', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
+            <span className="relogio" style={{ fontSize: '24px', display: 'block', marginBottom: '10px' }}>⏱ {formatarTempo(tempoDecorrido)}</span>
+            <div className="controles-timer" style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setTimerAtivo(!timerAtivo)} style={{ padding: '5px 10px', cursor: 'pointer' }}>{timerAtivo ? '⏸ Pausar' : '▶ Retomar'}</button>
+              <button onClick={() => setTempoDecorrido(0)} style={{ padding: '5px 10px', cursor: 'pointer' }}>🔄 Zerar</button>
             </div>
           </div>
+          
           {historico.length > 0 && (
             <div className="historico">
               <h3>Histórico de Partidas</h3>
               <ul>
-                {historico.map((partida, i) => (
-                  <li key={i}>
-                    <strong>{partida.vencedor}</strong> ({partida.placar}) <br/>
-                    <small>⏱ <em>{partida.duracao}</em></small>
-                  </li>
-                ))}
+                {historico.map((partida, i) => {
+                  const venceuNos = partida.idVencedor === 'nos'
+                  const nomeExibicao = venceuNos ? nomeNos : nomeEles
+                  
+                  return (
+                    <li key={i} className={venceuNos ? 'hist-nos' : 'hist-eles'}>
+                      <div className="hist-info">
+                        <strong>{nomeExibicao}</strong> ({partida.placar}) <br/>
+                        <small>⏱ <em>{partida.duracao}</em></small>
+                      </div>
+                      <button 
+                        className="btn-excluir-hist" 
+                        onClick={() => excluirPartida(i)}
+                        title="Excluir partida"
+                      >
+                        🗑️
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
+              
+              <div className="historico-global">
+                <h4>Placar Global</h4>
+                <p>
+                  <span className="cor-nos">{nomeNos}: {vitoriasNos}</span>
+                  <span className="divisor-global">|</span>
+                  <span className="cor-eles">{nomeEles}: {vitoriasEles}</span>
+                </p>
+              </div>
             </div>
           )}
+
+          <button className="btn-recarregar" onClick={() => window.location.reload()}>
+            Recarregar Página
+          </button>
+
+          <div className="sidebar-footer">
+            Feito por <a href="https://github.com/grebechi" target="_blank" rel="noopener noreferrer">Gabriel Rebechi</a>
+          </div>
         </div>
       </aside>
 
       <main className="mesa-truco">
-        
-        {/* LADO ESQUERDO: NÓS */}
         <div className="time lado-nos">
           <div className="cabecalho-time">
             <span className="vitorias">🏆 {vitoriasNos}</span>
@@ -161,25 +237,20 @@ function App() {
           </div>
           
           <div className="area-jogo">
-            {/* Barra de atalhos rápidos na borda */}
             <div className="atalhos-rapidos">
               <button onClick={() => adicionarNos(2)}>+2</button>
               <button onClick={() => adicionarNos(3)}>+3</button>
               <button onClick={() => adicionarNos(4)}>+4</button>
-              <button onClick={() => adicionarNos(calcularFaltaEnvido())} className="btn-fe">FE</button>
+              <button onClick={() => adicionarNos(calcularFaltaEnvido())} className="btn-fe" disabled={!alguemNasBoas}>FE</button>
             </div>
-
-            {/* O centro inteiro continua sendo um botão gigante de +1 */}
             <div className="area-centro" onClick={() => adicionarNos(1)}>
               <h1 className="pontuacao">{pontosNos}</h1>
               <span className="dica-toque">Toque para +1</span>
             </div>
           </div>
-          
-          <button className="btn-remover" onClick={removerNos}>- 1 Ponto</button>
+          <button className="btn-remover" onClick={removerNos} disabled={pontosNos === 0}>-1 Ponto</button>
         </div>
 
-        {/* LADO DIREITO: ELES */}
         <div className="time lado-eles">
           <div className="cabecalho-time">
             <input type="text" value={nomeEles} onChange={(e) => setNomeEles(e.target.value)} className="input-nome" />
@@ -191,18 +262,15 @@ function App() {
               <h1 className="pontuacao">{pontosEles}</h1>
               <span className="dica-toque">Toque para +1</span>
             </div>
-            
             <div className="atalhos-rapidos">
               <button onClick={() => adicionarEles(2)}>+2</button>
               <button onClick={() => adicionarEles(3)}>+3</button>
               <button onClick={() => adicionarEles(4)}>+4</button>
-              <button onClick={() => adicionarEles(calcularFaltaEnvido())} className="btn-fe">FE</button>
+              <button onClick={() => adicionarEles(calcularFaltaEnvido())} className="btn-fe" disabled={!alguemNasBoas}>FE</button>
             </div>
           </div>
-
-          <button className="btn-remover" onClick={removerEles}>- 1 Ponto</button>
+          <button className="btn-remover" onClick={removerEles} disabled={pontosEles === 0}>-1 Ponto</button>
         </div>
-
       </main>
     </div>
   )
