@@ -22,6 +22,42 @@ function App() {
     return () => clearInterval(intervalo)
   }, [timerAtivo])
 
+  // --- TELA SEMPRE ATIVA (WAKE LOCK) ---
+  useEffect(() => {
+    // A interface nativa do navegador para o cadeado de tela
+    let wakeLock: any = null
+
+    const solicitarTelaAtiva = async () => {
+      try {
+        // Verifica se o navegador do celular suporta a tecnologia
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen')
+          console.log('Wake Lock ativado: A tela não vai apagar!')
+        }
+      } catch (err) {
+        console.error('Erro ao manter a tela ativa:', err)
+      }
+    }
+
+    solicitarTelaAtiva()
+
+    // Se o usuário minimizar o app e voltar, o navegador derruba o cadeado.
+    // Esse evento detecta a volta e religa a tela ativa.
+    const lidarComMudancaDeVisibilidade = () => {
+      if (document.visibilityState === 'visible') {
+        solicitarTelaAtiva()
+      }
+    }
+
+    document.addEventListener('visibilitychange', lidarComMudancaDeVisibilidade)
+
+    // Função de limpeza do React quando fechamos o app
+    return () => {
+      if (wakeLock) wakeLock.release()
+      document.removeEventListener('visibilitychange', lidarComMudancaDeVisibilidade)
+    }
+  }, [])
+
   const formatarTempo = (segundos: number) => {
     const min = Math.floor(segundos / 60)
     const seg = segundos % 60

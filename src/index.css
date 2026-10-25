@@ -299,3 +299,22 @@ code {
 .historico li strong {
   color: #28a745;
 }
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px; 
+  width: 300px;
+  height: 100dvh; /* dvh (Dynamic Viewport Height) se ajusta à barra do celular */
+  background: #2a2a2a;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+  transition: 0.3s ease-in-out;
+  z-index: 200;
+  padding: 20px;
+  box-sizing: border-box;
+  
+  /* Habilita o scroll vertical na barra lateral */
+  overflow-y: auto; 
+  /* Espaço extra no final para o último item do histórico não ficar colado no fundo */
+  padding-bottom: 80px; 
+}
