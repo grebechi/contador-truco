@@ -6,14 +6,12 @@ function App() {
   const [pontosEles, setPontosEles] = useState(0)
   const [nomeNos, setNomeNos] = useState('Nós')
   const [nomeEles, setNomeEles] = useState('Eles')
-  const [limitePontos, setLimitePontos] = useState(12)
+  const [limitePontos, setLimitePontos] = useState(24) // Truco gaúcho geralmente é 24
   const [vitoriasNos, setVitoriasNos] = useState(0)
   const [vitoriasEles, setVitoriasEles] = useState(0)
   const [tempoDecorrido, setTempoDecorrido] = useState(0)
   const [timerAtivo, setTimerAtivo] = useState(true)
   const [historico, setHistorico] = useState<{ vencedor: string, placar: string, duracao: string }[]>([])
-  
-  // NOVO ESTADO: Controle do Menu Hambúrguer
   const [menuAberto, setMenuAberto] = useState(false)
 
   useEffect(() => {
@@ -24,9 +22,9 @@ function App() {
     return () => clearInterval(intervalo)
   }, [timerAtivo])
 
-  const formatarTempo = (segundosTotais: number) => {
-    const min = Math.floor(segundosTotais / 60)
-    const seg = segundosTotais % 60
+  const formatarTempo = (segundos: number) => {
+    const min = Math.floor(segundos / 60)
+    const seg = segundos % 60
     return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`
   }
 
@@ -46,20 +44,45 @@ function App() {
     setTimerAtivo(true)
   }
 
-  const adicionarNos = () => (pontosNos + 1 >= limitePontos ? finalizarPartida(nomeNos, pontosNos + 1, pontosEles) : setPontosNos(pontosNos + 1))
+  
+  const calcularFaltaEnvido = () => {
+    const maiorPontuacao = Math.max(pontosNos, pontosEles)
+    const metadeDoJogo = limitePontos / 2
+    
+    if (maiorPontuacao < metadeDoJogo) {
+      return limitePontos
+    } else {
+      return limitePontos - maiorPontuacao
+    }
+  }
+
+  const adicionarNos = (pontos: number) => {
+    const novos = pontosNos + pontos
+    novos >= limitePontos ? finalizarPartida(nomeNos, novos, pontosEles) : setPontosNos(novos)
+  }
+
+  const adicionarEles = (pontos: number) => {
+    const novos = pontosEles + pontos
+    novos >= limitePontos ? finalizarPartida(nomeEles, pontosNos, novos) : setPontosEles(novos)
+  }
+
   const removerNos = () => pontosNos > 0 && setPontosNos(pontosNos - 1)
-  const adicionarEles = () => (pontosEles + 1 >= limitePontos ? finalizarPartida(nomeEles, pontosNos, pontosEles + 1) : setPontosEles(pontosEles + 1))
   const removerEles = () => pontosEles > 0 && setPontosEles(pontosEles - 1)
 
   return (
     <div className="container">
-      {/* Botão Hambúrguer flutuante */}
+      <div className="aviso-rotacao">
+        <div className="aviso-conteudo">
+          <span className="icone-girar">🔄</span>
+          <h2>Vire o celular!</h2>
+          <p>O marcador funciona melhor com a tela deitada na mesa.</p>
+        </div>
+      </div>
+
       <button className="btn-menu" onClick={() => setMenuAberto(true)}>☰</button>
 
-      {/* Menu Lateral (Sidebar) */}
       <aside className={`sidebar ${menuAberto ? 'aberto' : ''}`}>
         <button className="btn-fechar" onClick={() => setMenuAberto(false)}>✖</button>
-        
         <div className="sidebar-conteudo">
           <h3>Configurações</h3>
           <div className="seletor-limite">
@@ -67,8 +90,8 @@ function App() {
             <button className={limitePontos === 12 ? 'ativo' : ''} onClick={() => setLimitePontos(12)}>12</button>
             <button className={limitePontos === 15 ? 'ativo' : ''} onClick={() => setLimitePontos(15)}>15</button>
             <button className={limitePontos === 24 ? 'ativo' : ''} onClick={() => setLimitePontos(24)}>24</button>
+            <button className={limitePontos === 30 ? 'ativo' : ''} onClick={() => setLimitePontos(30)}>30</button>
           </div>
-          
           <div className="painel-timer">
             <span className="relogio">⏱ {formatarTempo(tempoDecorrido)}</span>
             <div className="controles-timer">
@@ -76,13 +99,15 @@ function App() {
               <button onClick={() => setTempoDecorrido(0)}>🔄 Zerar</button>
             </div>
           </div>
-
           {historico.length > 0 && (
             <div className="historico">
-              <h3>Histórico</h3>
+              <h3>Histórico de Partidas</h3>
               <ul>
                 {historico.map((partida, i) => (
-                  <li key={i}><strong>{partida.vencedor}</strong> ({partida.placar}) - <em>{partida.duracao}</em></li>
+                  <li key={i}>
+                    <strong>{partida.vencedor}</strong> ({partida.placar}) <br/>
+                    <small>⏱ <em>{partida.duracao}</em></small>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -90,7 +115,6 @@ function App() {
         </div>
       </aside>
 
-      {/* A MESA DE JOGO */}
       <main className="mesa-truco">
         
         {/* LADO ESQUERDO: NÓS */}
@@ -100,12 +124,23 @@ function App() {
             <input type="text" value={nomeNos} onChange={(e) => setNomeNos(e.target.value)} className="input-nome" />
           </div>
           
-          {/* As áreas de clique (Hitboxes) ficam "atrás" do número */}
-          <div className="hitboxes">
-            <div className="hit-menos" onClick={removerNos}></div>
-            <div className="hit-mais" onClick={adicionarNos}></div>
+          <div className="area-jogo">
+            {/* Barra de atalhos rápidos na borda */}
+            <div className="atalhos-rapidos">
+              <button onClick={() => adicionarNos(2)}>+2</button>
+              <button onClick={() => adicionarNos(3)}>+3</button>
+              <button onClick={() => adicionarNos(4)}>+4</button>
+              <button onClick={() => adicionarNos(calcularFaltaEnvido())} className="btn-fe">FE</button>
+            </div>
+
+            {/* O centro inteiro continua sendo um botão gigante de +1 */}
+            <div className="area-centro" onClick={() => adicionarNos(1)}>
+              <h1 className="pontuacao">{pontosNos}</h1>
+              <span className="dica-toque">Toque para +1</span>
+            </div>
           </div>
-          <h1 className="pontuacao">{pontosNos}</h1>
+          
+          <button className="btn-remover" onClick={removerNos}>- 1 Ponto</button>
         </div>
 
         {/* LADO DIREITO: ELES */}
@@ -115,11 +150,21 @@ function App() {
             <span className="vitorias">🏆 {vitoriasEles}</span>
           </div>
           
-          <div className="hitboxes">
-            <div className="hit-menos" onClick={removerEles}></div>
-            <div className="hit-mais" onClick={adicionarEles}></div>
+          <div className="area-jogo">
+            <div className="area-centro" onClick={() => adicionarEles(1)}>
+              <h1 className="pontuacao">{pontosEles}</h1>
+              <span className="dica-toque">Toque para +1</span>
+            </div>
+            
+            <div className="atalhos-rapidos">
+              <button onClick={() => adicionarEles(2)}>+2</button>
+              <button onClick={() => adicionarEles(3)}>+3</button>
+              <button onClick={() => adicionarEles(4)}>+4</button>
+              <button onClick={() => adicionarEles(calcularFaltaEnvido())} className="btn-fe">FE</button>
+            </div>
           </div>
-          <h1 className="pontuacao">{pontosEles}</h1>
+
+          <button className="btn-remover" onClick={removerEles}>- 1 Ponto</button>
         </div>
 
       </main>
