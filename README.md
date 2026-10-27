@@ -1,35 +1,79 @@
-# React + TypeScript + Vite
+# Marcador de Truco Digital
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+![Status](https://img.shields.io/badge/Status-Concluído-success)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 
-Currently, two official plugins are available:
+Um placar digital moderno, rápido e responsivo para marcar pontos nas tuas partidas de Truco Gaúcho. Chega de usar feijões, palitos ou gastar papel! 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+O grande diferencial deste projeto é a interface limpa e focada na usabilidade: **ele foi desenhado inicialmente para rodar em um iPad (ou tablets maiores) deitado no canto da mesa**, funcionando como um autêntico "tabuleiro digital" entre os jogadores. No entanto, o layout é **100% responsivo** e se adapta perfeitamente a qualquer celular.
 
-## React Compiler
+---
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Principais Funcionalidades
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+- **Controle Rápido e Intuitivo:** Toque no centro da tela para somar `+1` ponto, ou use os botões de atalho para `+2`, `+3` e `+4` (ideal para quando gritam Truco, Retruco e Vale 4).
 
-## Expanding the Oxlint configuration
+- **Falta Envido Automático (FE):** O botão "FE" calcula automaticamente os pontos necessários para fechar a partida com base no placar atual e no limite de pontos configurado. Ele só é ativado quando alguém está "nas boas".
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **Sistema de Remoção Animado:** Clicou errado? O botão `-1 Ponto` corrige a pontuação com uma animação de encolhimento e aviso visual em vermelho. Ele desativa automaticamente se o placar for zero.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- **Histórico e Placar Global:** Cada partida finalizada vai para um histórico (com os nomes dos times, placar final e duração da partida). Um placar global conta as vitórias totais de cada equipe.
+
+- **Timer Integrado:** Saiba exatamente quanto tempo durou aquela partida disputada.
+
+- **Tela Sempre Ativa:** Utiliza a *Wake Lock API* para impedir que a tela do dispositivo apague sozinha no meio do jogo.
+
+- **Menu Lateral de Configurações:** Permite alterar a meta de pontos (12, 15, 24 ou 30), gerenciar o histórico (com opção de exclusão) e resetar completamente o app.
+
+---
+
+## Feito para telas grandes, mas roda em qualquer lugar
+
+A disposição das informações foi pensada no formato "frente a frente" (Landscape). A ideia é abrir a aplicação no tablet, deitá-lo na mesa entre as duplas e jogar. 
+Caso esteja usando um smartphone, o sistema sugere que você vire a tela na horizontal para ter a melhor experiência possível dos botões e atalhos.
+
+---
+
+## Como Rodar Localmente (Clone e Modifique!)
+
+Este projeto é de código aberto. Sinta-se livre para clonar o repositório, estudar o código e personalizá-lo! Quer mudar as cores? Adicionar regras diferentes? Alterar as regras de pontuação? Fique à vontade!
+
+### Pré-requisitos
+- [Node.js](https://nodejs.org/) instalado.
+- Gerenciador de pacotes (NPM, Yarn ou PNPM).
+- Docker é opcional, mas facilita a sua vida!
+
+### Guia de instalação
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/grebechi/contador-truco.git
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+2. Acesse a pasta do projeto:
+```bash
+cd contador-truco
+```
+
+3. Instale as dependências:
+```bash
+npm install
+```
+
+4. Rode o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+
+5. (Opcional) Se preferir rodar o projeto dentro de um container do Docker, é só rodar o seguinte comando no terminal:
+```bash
+docker compose up --build
+```
+
+6. Abra o navegador no endereço indicado (geralmente http://localhost:5173).
+
+### Teste o projeto agora mesmo
+
+Se quiser testar o contador de pontos já em produção, pode acessar: https://truco-xi.vercel.app
+
