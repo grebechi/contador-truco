@@ -17,6 +17,7 @@ function App() {
   const [historico, setHistorico] = useState<{ idVencedor: Lado, placar: string, duracao: string }[]>([])
   const [modalVitoria, setModalVitoria] = useState<{ idVencedor: Lado, ptsVencedor: number, ptsPerdedor: number, tempo: string } | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [mostrarBtnFullscreen, setMostrarBtnFullscreen] = useState(true);
 
   useEffect(() => {
     let intervalo: ReturnType<typeof setInterval>;
@@ -53,6 +54,21 @@ const alternarTelaCheia = () => {
   }
 }
 
+useEffect(() => {
+
+  const isIPhone = /iPhone/i.test(navigator.userAgent);
+  
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+  
+  if ((isIPhone && !isPWA) || isPWA) {
+    setMostrarBtnFullscreen(false);
+  } else {
+
+    const doc = document.documentElement as any;
+    const suportaAPI = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.msRequestFullscreen;
+    setMostrarBtnFullscreen(!!suportaAPI);
+  }
+}, []);
 
 useEffect(() => {
   let wakeLock: WakeLockSentinel | null = null;
@@ -277,9 +293,11 @@ useEffect(() => {
             Recarregar Página
           </button>
 
+          {mostrarBtnFullscreen && (
           <button className="btn-fullscreen" onClick={alternarTelaCheia}>
             {isFullscreen ? 'Sair da Tela Cheia' : '⛶ Tela Cheia'}
           </button>
+          )}
 
           <div className="sidebar-footer">
             Feito por <a href="https://github.com/grebechi" target="_blank" rel="noopener noreferrer">Gabriel Rebechi</a>
