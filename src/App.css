@@ -68,6 +68,12 @@ html, body, #root {
 .lado-nos { background-color: #d32f2f; }
 .lado-eles { background-color: #1976d2; }
 
+/* Evita que o cabeçalho do lado Nós fique embaixo do botão de menu ☰ */
+.lado-nos .cabecalho-time {
+  padding-left: 50px;
+  box-sizing: border-box;
+}
+
 .cabecalho-time {
   position: absolute;
   top: 15px;
@@ -91,7 +97,7 @@ html, body, #root {
   width: 120px;
 }
 .input-nome:focus { outline: 2px solid white; }
-.vitorias { font-size: 20px; }
+.vitorias { font-size: 38px; }
 
 .area-jogo {
   display: flex;
@@ -99,8 +105,9 @@ html, body, #root {
   width: 100%;
   height: 100%;
   padding-top: 60px;
-  padding-bottom: 50px;
+  padding-bottom: 20px;
   box-sizing: border-box;
+  align-items: center;
 }
 
 .area-centro {
@@ -112,12 +119,14 @@ html, body, #root {
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* O Pisque Verde ao clicar! */
 .area-centro:active .pontuacao {
   color: #28a745;
-  transform: scale(1.1); /* Dá um pulinho */
+  transform: scale(1.1);
 }
 
 .pontuacao {
@@ -134,12 +143,12 @@ html, body, #root {
 }
 
 .atalhos-rapidos {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 50px);
+  gap: 8px;
   padding: 0 15px;
   z-index: 5;
+  align-content: center;
 }
 
 .atalhos-rapidos button {
@@ -167,27 +176,23 @@ html, body, #root {
   color: gold !important;
 }
 
-/* Botão bloqueado (FE desativado antes das boas) */
-button:disabled {
-  opacity: 0.2;
-  cursor: not-allowed;
-  pointer-events: none;
-  filter: grayscale(100%);
-}
-
+/* Botão de remover ocupando 2 colunas no grid de atalhos */
 .btn-remover {
-  align-self: center; 
-  margin-bottom: 25px; 
+  grid-column: span 2;
+  width: 100% !important;
+  height: 42px !important;
+  margin: 0 !important;
   background: rgba(0, 0, 0, 0.4);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
-  padding: 10px 20px;
   cursor: pointer;
   transition: 0.1s;
-  z-index: 10;
+  z-index: 50 !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-remover:active {
@@ -196,16 +201,23 @@ button:disabled {
   transform: scale(0.95);
 }
 
-
 .time:has(.btn-remover:active) .pontuacao {
   color: #ff3b30; 
   transform: scale(0.9);
 }
 
+/* Botão bloqueado (FE desativado antes das boas) */
+button:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(100%);
+}
+
 .sidebar {
   position: fixed;
   top: 0;
-  left: -300px; /* Esconde fora da tela */
+  left: -300px;
   width: 300px;
   height: 100dvh;
   background: #2a2a2a;
@@ -214,7 +226,6 @@ button:disabled {
   z-index: 200;
   padding: 20px;
   box-sizing: border-box;
-  
   overflow-y: auto; 
   padding-bottom: 80px; 
 }
@@ -240,15 +251,15 @@ button:disabled {
 
 .btn-menu {
   position: fixed;
-  top: 15px;
-  left: 15px;
+  top: 12px;
+  left: 12px;
   z-index: 300;
   background: rgba(0, 0, 0, 0.6);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px 15px;
+  padding: 8px 12px;
   border-radius: 8px;
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -342,6 +353,9 @@ button:disabled {
   width: 85%;
   max-width: 350px;
   color: white;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .modal-vitoria h2 {
@@ -459,7 +473,6 @@ button:disabled {
   background: #b71c1c; 
 }
 
-
 .sidebar-footer {
   margin-top: auto; 
   padding-top: 30px;
@@ -492,23 +505,12 @@ button:disabled {
   align-items: center;
 }
 
-/* Cor do time Nós (Vermelho) */
-.hist-nos {
-  border-left: 4px solid #d32f2f;
-}
-.hist-nos strong {
-  color: #ff4d4d;
-}
+.hist-nos { border-left: 4px solid #d32f2f; }
+.hist-nos strong { color: #ff4d4d; }
 
-/* Cor do time Eles (Azul) */
-.hist-eles {
-  border-left: 4px solid #1976d2;
-}
-.hist-eles strong {
-  color: #4da6ff;
-}
+.hist-eles { border-left: 4px solid #1976d2; }
+.hist-eles strong { color: #4da6ff; }
 
-/* Botão de lixeira */
 .btn-excluir-hist {
   background: transparent;
   border: none;
@@ -550,3 +552,111 @@ button:disabled {
 .cor-nos { color: #ff4d4d; }
 .cor-eles { color: #4da6ff; }
 .divisor-global { color: #666; font-weight: normal; }
+
+.btn-fullscreen {
+  background: #333;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-fullscreen:active {
+  transform: scale(0.95);
+  background: #444;
+}
+
+@media (max-height: 500px) {
+
+  .cabecalho-time {
+    top: 5px;
+    transform: scale(0.9);
+  }
+  
+  .area-jogo {
+    padding-top: 35px;
+    padding-bottom: 5px;
+  }
+  
+  .atalhos-rapidos {
+    gap: 6px;
+    padding: 0 10px;
+  }
+  
+  .atalhos-rapidos button {
+    width: 48px;
+    height: 48px;
+    font-size: 17px;
+  }
+
+  .btn-remover {
+    height: 38px !important;
+    font-size: 13px;
+  }
+
+  .pontuacao {
+    font-size: 24vh;
+  }
+  
+  .dica-toque {
+    margin-top: 2px;
+    font-size: 12px;
+  }
+
+  .modal-vitoria {
+    padding: 15px;
+  }
+  
+  .modal-vitoria h2 {
+    font-size: 20px;
+  }
+  
+  .destaque-vencedor {
+    font-size: 24px;
+    margin: 5px 0;
+  }
+  
+  .placar-partida, .tempo-partida {
+    font-size: 14px;
+    margin: 2px 0;
+  }
+  
+  .divisor {
+    margin: 10px 0;
+  }
+  
+  .modal-vitoria h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+  }
+  
+  .placar-global {
+    margin-bottom: 12px;
+    font-size: 18px;
+  }
+  
+  .placar-global .vs {
+    margin-top: 5px;
+  }
+  
+  .btn-nova-partida {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+}
+
+@media (max-height: 380px) {
+  .pontuacao { font-size: 20vh; }
+  .atalhos-rapidos button { width: 42px; height: 42px; font-size: 15px; }
+  .btn-remover { height: 34px !important; font-size: 12px; }
+}

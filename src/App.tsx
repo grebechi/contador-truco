@@ -16,6 +16,7 @@ function App() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [historico, setHistorico] = useState<{ idVencedor: Lado, placar: string, duracao: string }[]>([])
   const [modalVitoria, setModalVitoria] = useState<{ idVencedor: Lado, ptsVencedor: number, ptsPerdedor: number, tempo: string } | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     let intervalo: ReturnType<typeof setInterval>;
@@ -26,27 +27,73 @@ function App() {
   }, [timerAtivo])
 
   useEffect(() => {
-    let wakeLock: any = null
-    const solicitarTelaAtiva = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen')
-        }
-      } catch (err) {
-        console.error('Erro ao manter tela ativa:', err)
+  const lidarComMudancaFullscreen = () => {
+    setIsFullscreen(!!document.fullscreenElement)
+  }
+
+  document.addEventListener('fullscreenchange', lidarComMudancaFullscreen)
+  return () => document.removeEventListener('fullscreenchange', lidarComMudancaFullscreen)
+}, [])
+
+const alternarTelaCheia = () => {
+  if (!document.fullscreenElement) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error('Erro ao ativar tela cheia:', err)
+      })
+    } else {
+      alert('O modo tela cheia não é suportado neste navegador. Se estiver no iPhone, adicione o app à Tela Inicial para rodar em tela cheia!')
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch((err) => {
+        console.error('Erro ao sair da tela cheia:', err)
+      })
+    }
+  }
+}
+
+
+useEffect(() => {
+  let wakeLock: WakeLockSentinel | null = null;
+
+  const solicitarTelaAtiva = async () => {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+        wakeLock = await navigator.wakeLock.request('screen');
       }
+    } catch (err) {
+      console.log('Wake Lock negado ou não suportado no contexto atual:', err);
     }
+  };
 
-    solicitarTelaAtiva()
+  solicitarTelaAtiva();
 
-    const lidarComMudanca = () => document.visibilityState === 'visible' && solicitarTelaAtiva()
-    document.addEventListener('visibilitychange', lidarComMudanca)
-
-    return () => {
-      if (wakeLock) wakeLock.release()
-      document.removeEventListener('visibilitychange', lidarComMudanca)
+  const aoTocarTela = () => {
+    if (!wakeLock) {
+      solicitarTelaAtiva();
     }
-  }, [])
+  };
+
+  const lidarComMudancaVisibilidade = () => {
+    if (document.visibilityState === 'visible') {
+      solicitarTelaAtiva();
+    }
+  };
+
+  window.addEventListener('touchstart', aoTocarTela, { once: false });
+  window.addEventListener('click', aoTocarTela, { once: false });
+  document.addEventListener('visibilitychange', lidarComMudancaVisibilidade);
+
+  return () => {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+    }
+    window.removeEventListener('touchstart', aoTocarTela);
+    window.removeEventListener('click', aoTocarTela);
+    document.removeEventListener('visibilitychange', lidarComMudancaVisibilidade);
+  };
+}, []);
 
   const formatarTempo = (segundos: number) => {
     const min = Math.floor(segundos / 60)
@@ -111,8 +158,15 @@ function App() {
     novos >= limitePontos ? finalizarPartida('eles', pontosNos, novos) : setPontosEles(novos)
   }
 
-  const removerNos = () => pontosNos > 0 && setPontosNos(pontosNos - 1)
-  const removerEles = () => pontosEles > 0 && setPontosEles(pontosEles - 1)
+  const removerNos = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation(); // Impede que o clique suba para a div pai (+1)
+    if (pontosNos > 0) setPontosNos(prev => prev - 1);
+  }
+
+  const removerEles = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation(); // Impede que o clique suba para a div pai (+1)
+    if (pontosEles > 0) setPontosEles(prev => prev - 1);
+  }
   const alguemNasBoas = Math.max(pontosNos, pontosEles) >= limitePontos / 2;
 
   return (
@@ -223,6 +277,10 @@ function App() {
             Recarregar Página
           </button>
 
+          <button className="btn-fullscreen" onClick={alternarTelaCheia}>
+            {isFullscreen ? 'Sair da Tela Cheia' : '⛶ Tela Cheia'}
+          </button>
+
           <div className="sidebar-footer">
             Feito por <a href="https://github.com/grebechi" target="_blank" rel="noopener noreferrer">Gabriel Rebechi</a>
           </div>
@@ -242,13 +300,14 @@ function App() {
               <button onClick={() => adicionarNos(3)}>+3</button>
               <button onClick={() => adicionarNos(4)}>+4</button>
               <button onClick={() => adicionarNos(calcularFaltaEnvido())} className="btn-fe" disabled={!alguemNasBoas}>FE</button>
+              <button className="btn-remover" onClick={removerNos} disabled={pontosNos === 0}>-1 Ponto</button>
             </div>
             <div className="area-centro" onClick={() => adicionarNos(1)}>
               <h1 className="pontuacao">{pontosNos}</h1>
               <span className="dica-toque">Toque para +1</span>
             </div>
           </div>
-          <button className="btn-remover" onClick={removerNos} disabled={pontosNos === 0}>-1 Ponto</button>
+          
         </div>
 
         <div className="time lado-eles">
@@ -267,9 +326,9 @@ function App() {
               <button onClick={() => adicionarEles(3)}>+3</button>
               <button onClick={() => adicionarEles(4)}>+4</button>
               <button onClick={() => adicionarEles(calcularFaltaEnvido())} className="btn-fe" disabled={!alguemNasBoas}>FE</button>
+              <button className="btn-remover" onClick={removerEles} disabled={pontosEles === 0}>-1 Ponto</button>
             </div>
           </div>
-          <button className="btn-remover" onClick={removerEles} disabled={pontosEles === 0}>-1 Ponto</button>
         </div>
       </main>
     </div>
