@@ -581,6 +581,12 @@ button:disabled {
 
 @media (max-height: 500px) {
 
+  .btn-menu {
+  top: 25px;
+  left: 25px;
+  
+}
+  
   .cabecalho-time {
     top: 15px;
     transform: scale(0.9);
@@ -593,7 +599,7 @@ button:disabled {
   
   .atalhos-rapidos {
     gap: 6px;
-    padding: 0 10px;
+    padding: 0 70px;
   }
   
   .atalhos-rapidos button {
@@ -603,7 +609,7 @@ button:disabled {
   }
 
   .btn-remover {
-    height: 48px !important;
+    height: 60px !important;
     font-size: 16px;
   }
 
@@ -661,5 +667,5 @@ button:disabled {
 @media (max-height: 380px) {
   .pontuacao { font-size: 20vh; }
   .atalhos-rapidos button { width: 42px; height: 42px; font-size: 15px; }
-  .btn-remover { height: 34px !important; font-size: 12px; }
+  .btn-remover { height: 52px !important; font-size: 12px; }
 }
