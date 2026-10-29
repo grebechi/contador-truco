@@ -123,8 +123,7 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* O Pisque Verde ao clicar! */
-.area-centro:active .pontuacao {
+.area-centro:active .pontuacao, .time:has(.atalhos-rapidos button:not(.btn-remover):active) .pontuacao {
   color: #28a745;
   transform: scale(1.15);
   transition: all 0.05s ease-in;
@@ -220,14 +219,14 @@ button:disabled {
 .sidebar {
   position: fixed;
   top: 0;
-  left: -300px;
-  width: 300px;
+  left: -400px;
+  width: 400px;
   height: 100dvh;
   background: #2a2a2a;
   box-shadow: 2px 0 10px rgba(0,0,0,0.5);
   transition: 0.3s ease-in-out;
   z-index: 200;
-  padding: 20px;
+  padding: 20px 20px 80px 50px;
   box-sizing: border-box;
   overflow-y: auto; 
   padding-bottom: 80px; 
